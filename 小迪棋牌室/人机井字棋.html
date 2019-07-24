@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>单人井字棋</title>
+    <link rel="icon" href="4.jpg" sizes="32x32">
+    <link rel="stylesheet" href="css/style.css">
+    <link type="text/css" href="转圈圈特效.css" rel="stylesheet" >
+    <link rel="stylesheet" href="五子棋页面.css">
+    <style type='text/css'>
+        .dibu {
+            position: absolute;
+            left: 30%;
+            word-spacing: 10px;
+            top: 790px;
+            color: white;
+            text-align: center;
+        }
+        canvas {
+            display: block;
+            margin: 50px auto;
+            box-shadow: -2px -2px 2px #efefef, 5px 5px 5px #b9b9b9;
+            cursor: pointer;
+        }
+        .btn-wrap {
+            display: flex;
+            flex-direction: row;
+            justify-content:center;
+        }
+        .btn-wrap div {
+            margin: 0 10px;
+        }
+
+        div>span {
+            display: inline-block;
+            padding: 10px 20px;
+            color: #fff;
+            background-color: #EE82EE;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+        div.unable span {
+            background: #D6D6D4;
+            color: #adacaa;
+        }
+
+        #result-wrap {text-align: center;}
+        #result-wrap2 {text-align: center;color: gold;}
+
+        .div1{
+            z-index: 1001;
+            text-align: center;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+        }
+        .img1{
+            margin-top:100px;
+            margin-left: 500px;
+            width:450px;
+            height: 450px;
+            animation-name: img1;
+            animation-delay:1s;
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+            opacity: 0.8;
+        }
+        @keyframes img1 {
+            to{
+                width: 0px;
+                height: 0px;
+                top: 0px;
+                margin-left: 0px;
+                margin-top: 0px;
+                opacity: 0;
+            }
+        }
+        .p1{
+            margin-left: 500px;
+            /*font-family: 微软雅黑;*/
+            font-size: 30px;
+            /*font-weight:bold;*/
+            letter-spacing:8px;
+            text-shadow: 1px 1px 1px #0d070e;
+            color:black;
+            opacity: 1;
+            animation-name: p1;
+            animation-delay:1s;
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+            font-size: 30px;
+
+        }
+        @keyframes p1 {
+            to{
+                opacity: 0;
+                font-size: 0px;
+                margin-left: 0px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+<div class="out">
+    <div class="fade-in">
+        <div class="container9">
+            <div class="one common"></div>
+            <div class="two common"></div>
+            <div class="three common"></div>
+            <div class="four common"></div>
+            <div class="five common"></div>
+            <div class="six common"></div>
+            <div class="seven common"></div>
+            <div class="eight common"></div>
+        </div>
+    </div>
+</div>
+<div id="background" class="wall"></div>
+<div id="midground" class="wall"></div>
+<div id="foreground" class="wall"></div>
+<div id="top" class="wall"></div>
+<div class="container">
+    <div class="bk">
+        <div class="content">
+            <table class="tb">
+                <tr>
+                    <th><img src="1.jpg"  class="tu"></th>
+                    <th class="di">小迪棋牌室</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="youxikuang">
+    <table border="1">
+        <tr>
+            <td width="600px" height="400px">
+                <h3 id="result-wrap">小迪棋牌室-井字棋传奇</h3>
+                <h4 id="result-wrap2">引领6亿人的游戏品牌</h4>
+                <canvas id="chess" width="330px" height="330px"></canvas><!--棋盘画布300×300,边界15px-->
+
+                <div class="btn-wrap">
+                    <div id='restart' class="restart">
+                        <span>重新开始</span>
+                    </div>
+                </div>
+
+                <script>
+                    var chess = document.getElementById("chess");//获取画布
+                    var context = chess.getContext('2d');//获取上下文
+                    var sum = 0;
+                    var over = false;
+                    var player = 0;
+                    var resultTxt = document.getElementById('result-wrap');
+                    var aii=0;
+                    var aij=0;
+                    var aiWinPercent = 0;//机器胜利种数
+                    var aijihui = [];//横着为1-3，竖着为4-6，斜着7/8
+                    for (var k = 1 ; k <= 8 ; k++)
+                    {
+                        aijihui[k] = 1;
+                    }
+                    //记录全局落子情况
+                    var qiju = [];
+                    for (var i = 0 ; i < 3 ; i++) {
+                        qiju[i] = [];
+                        for(var j = 0 ; j < 3 ; j++)
+                            qiju[i][j] = 0;
+                    }
+
+                    window.onload = function(){
+                        // console.log("window.onload");
+                        drawChessBoard(); // 画棋盘
+                    }
+
+                    //重新开始
+                    document.getElementById("restart").onclick = function(){
+                        window.location.reload();
+                    }
+
+                    chess.onclick = function(e){//第一个玩家
+                        //判断游戏是否已经结束
+                        if(over)
+                        {
+                            if(player==1){
+                                console.log("游戏已经结束，1号玩家胜利！");
+                            }else{
+                                console.log("游戏已经结束，2号玩家胜利！");
+                            }
+                            return;
+                        }
+
+
+                        var ex = e.offsetX;
+                        var ey = e.offsetY;
+                        var ei = Math.floor((ex-15) / 100);//保留不大于该数的整数1-0,2-1,3-2
+                        var ej = Math.floor((ey-15) / 100);
+
+                        if(ex < 15 || ex >= 315 || ey < 15 || ey >= 315)
+                        {
+                            console.log("return该点不在棋盘内");
+                            return;
+                        }
+
+                        if(qiju[ei][ej]!=0) {
+                            console.log("return该点已落子");
+                            return;
+                        }
+
+
+                        qiju[ei][ej] = 1;
+                        console.log("第一个玩家");
+                        drawChaPlayer(e);
+                        sum++;
+                        chargeOne();
+                        if(over){
+                            // window.alert('你赢了');
+                            resultTxt.innerHTML = '恭喜，玩家赢了！';
+                            console.log("游戏结束玩家胜利")
+                        }
+                        else{
+                            if (sum>=9)
+                            {
+                                over = true;
+                                resultTxt.innerHTML = '平局';
+                            }
+                        }
+
+                        if(!over)
+                        {
+                            console.log("第二个玩家");
+
+                            computerAI();
+                            qiju[aii][aij] = 2;
+
+                            drawCiclePlayer(aii,aij);
+                            sum++;
+                            chargeTwo();
+                            if(over){
+                                // window.alert('你赢了');
+                                resultTxt.innerHTML = '计算机赢了！';
+                                console.log("游戏结束计算机胜利")
+                            }
+                            else{
+                                if (sum>=9)
+                                {
+                                    over = true;
+                                    resultTxt.innerHTML = '平局';
+                                }
+                            }
+                        }
+                    }
+
+                    // console.log("chess.onlick外输出");
+
+                    var drawChessBoard = function() {
+                        // console.log("drawchessboard");
+                        for(var i = 1; i < 3; i++){
+                            context.strokeStyle = '#000000'; //边框(线框)颜色
+                            context.lineWidth=2;//线的宽度
+                            //画竖线
+                            context.moveTo(15 + i * 100 , 15);
+                            context.lineTo(15 + i * 100 , 315);
+                            context.stroke();
+                            //画横线
+                            context.moveTo(15 , 15 + i * 100);
+                            context.lineTo(315 , 15 + i * 100);
+                            context.stroke();
+                        }
+                    }
+
+                    //一号智能算法
+                    var computerAI = function (){
+
+                        while (1)
+                        {
+                            var xx = Math.floor(Math.random()*3);
+                            var yy = Math.floor(Math.random()*3);
+                            if(qiju[xx][yy]==0){
+                                aii = xx;
+                                aij = yy;
+                                break;
+                            }
+                        }
+                    }
+
+                    //机器下棋算法
+                    //1、先判断是否有可以获胜的落子情况:先找出所有己方两字连下的情况，看看是否有可以落子的情况
+                    //2、再找已经落一子的情况，
+                    // var computerAI = function () {
+                    //     for (var k1 = 0 ; k < 3 ; k++)
+                    //     {
+                    //         for(var k2 = 0; k < 3 ; k++)
+                    //         {
+                    //             if(qiju[k1][k2]==1)
+                    //             {
+                    //                 if(k1==0 && k2==0)
+                    //                 {
+                    //                     //横着为1-3，竖着为4-6，斜着7/8
+                    //                     aijihui[1] = 0;
+                    //                     aijihui[4] = 0;
+                    //                     aijihui[7] = 0;
+                    //                 }else if(k1==0 && k2==1){
+                    //                     aijihui[2] = 0;
+                    //                     aijihui[4] = 0;
+                    //                     // aijihui[7] = 0;
+                    //                 }else if(k1==0 && k2==2){
+                    //                     aijihui[3] = 0;
+                    //                     aijihui[4] = 0;
+                    //                     aijihui[8] = 0;
+                    //                 }else if(k1==1 && k2==0){
+                    //                     aijihui[1] = 0;
+                    //                     aijihui[5] = 0;
+                    //                     // aijihui[7] = 0;
+                    //                 }else if(k1==1 && k2==1){
+                    //                     aijihui[2] = 0;
+                    //                     aijihui[5] = 0;
+                    //                     aijihui[7] = 0;
+                    //                     aijihui[8] = 0;
+                    //                 }else if(k1==1 && k2==2){
+                    //                     aijihui[3] = 0;
+                    //                     aijihui[5] = 0;
+                    //                     // aijihui[7] = 0;
+                    //                 }else if(k1==2 && k2==0){
+                    //                     aijihui[1] = 0;
+                    //                     aijihui[6] = 0;
+                    //                     aijihui[8] = 0;
+                    //                 }else if(k1==2 && k2==1){
+                    //                     aijihui[2] = 0;
+                    //                     aijihui[6] = 0;
+                    //                     // aijihui[7] = 0;
+                    //                 }else if(k1==2 && k2==2){
+                    //                     aijihui[3] = 0;
+                    //                     aijihui[6] = 0;
+                    //                     aijihui[7] = 0;
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+                    //
+                    //     for(var m = 1; m <= 8 ; m++)
+                    //     {
+                    //         if(aijihui[m]==1)
+                    //         {
+                    //             //横线
+                    //             if(m>=1 && m<=3)
+                    //             {
+                    //
+                    //             }
+                    //             //竖线
+                    //             if(m>=4 && m<=6)
+                    //             {
+                    //
+                    //             }
+                    //             //斜线
+                    //             if(m>=7 && m<=8)
+                    //             {
+                    //
+                    //             }
+                    //         }
+                    //     }
+                    //
+                    // }
+
+                    var drawCiclePlayer = function(i,j) {
+
+                        console.log("成功调用drawCiclePlayer");
+                        // console.log(e.offsetX);
+                        // console.log(e.offsetY);
+                        // var x = e.offsetX;
+                        // var y = e.offsetY;
+                        // var i = Math.floor((x-15) / 100);//保留不大于该数的整数1-0,2-1,3-2
+                        // var j = Math.floor((y-15) / 100);
+                        // console.log(i);
+                        // console.log(j);
+
+
+                        context.beginPath();
+                        context.lineWidth = 2;
+                        context.strokeStyle = '#000000';
+                        context.arc(15 + 50 + i * 100, 15 + 50 + j * 100, 30, 0, 2 * Math.PI);// 画圆
+                        context.stroke();
+                        context.closePath();
+
+                        // //画圆
+                        // context.beginPath();
+                        // //arc(圆心的x坐标，圆心的y坐标，圆的半径，起始角（以弧度计，即l圆心的3点钟位置是0度），结束角，规定应该是顺时针还是逆时针画图)
+                        // context.arc(15 + 50 + i * 100, 15 + 50 + j * 100, 30, 0, 2 * Math.PI);// 画圆
+                        // context.closePath();
+                        // //渐变
+                        // var gradient = context.createRadialGradient(15 + i * 30 + 2, 15 + j * 30 - 2, 13, 15 + i * 30 + 2, 15 + j * 30 - 2, 0);
+                        // //棋子颜色
+                        // gradient.addColorStop(0,'#0a0a0a');//底色
+                        // // gradient.addColorStop(1,'#636766');//上层色
+                        // context.fillStyle = gradient;
+                        // context.fill();
+
+                    }
+
+                    var drawChaPlayer = function(e) {
+
+                        console.log("成功调用drawChaPlayer");
+                        // console.log(e.offsetX);
+                        // console.log(e.offsetY);
+                        var x = e.offsetX;
+                        var y = e.offsetY;
+                        var i = Math.floor((x-15) / 100);//保留不大于该数的整数1-0,2-1,3-2
+                        var j = Math.floor((y-15) / 100);
+                        // console.log(i);
+                        // console.log(j);
+
+                        context.strokeStyle = '#000000'; //边框(线框)颜色
+                        context.lineWidth=2;//线的宽度
+                        //左上右下(y,x)
+                        context.moveTo(15 + i * 100 + 50 - 30 , 15 + j * 100 + 50 - 30);
+                        context.lineTo(15 + i * 100 + 50 + 30 , 15 + j * 100 + 50 + 30);
+                        context.stroke();
+                        //右上左下(y,x)
+                        context.moveTo(15 + i * 100 + 50 - 30 , 15 + j * 100 + 50 + 30);
+                        context.lineTo(15 + i * 100 + 50 + 30 , 15 + j * 100 + 50 - 30);
+                        context.stroke();
+
+                    }
+
+                    var chargeOne = function () {
+                        //横着三种赢法
+                        if(qiju[0][0]==1 && qiju[0][1]==1 && qiju[0][2]==1){
+                            over = true;
+                            player = 1;
+                        }else if (qiju[1][0]==1 && qiju[1][1]==1 && qiju[1][2]==1) {
+                            over = true;
+                            player = 1;
+                        }else if (qiju[2][0]==1 && qiju[2][1]==1 && qiju[2][2]==1) {
+                            over = true;
+                            player = 1;
+                        }
+                        //竖着三种赢法
+                        else if (qiju[0][0]==1 && qiju[1][0]==1 && qiju[2][0]==1) {
+                            over = true;
+                            player = 1;
+                        }else if (qiju[0][1]==1 && qiju[1][1]==1 && qiju[2][1]==1) {
+                            over = true;
+                            player = 1;
+                        }else if (qiju[0][2]==1 && qiju[1][2]==1 && qiju[2][2]==1) {
+                            over = true;
+                            player = 1;
+                        }
+                        //斜着两种赢法
+                        else if (qiju[0][0]==1 && qiju[1][1]==1 && qiju[2][2]==1) {
+                            over = true;
+                            player = 1;
+                        }else if (qiju[0][2]==1 && qiju[1][1]==1 && qiju[2][0]==1) {
+                            over = true;
+                            player = 1;
+                        }
+                        //
+                        else {
+
+                        }
+                    }
+
+                    var chargeTwo = function () {
+                        //横着三种赢法
+                        if(qiju[0][0]==2 && qiju[0][1]==2 && qiju[0][2]==2){
+                            over = true;
+                            player = 2;
+                        }else if (qiju[1][0]==2 && qiju[1][1]==2 && qiju[1][2]==2) {
+                            over = true;
+                            player = 2;
+                        }else if (qiju[2][0]==2 && qiju[2][1]==2 && qiju[2][2]==2) {
+                            over = true;
+                            player = 2;
+                        }
+                        //竖着三种赢法
+                        else if (qiju[0][0]==2 && qiju[1][0]==2 && qiju[2][0]==2) {
+                            over = true;
+                            player = 2;
+                        }else if (qiju[0][1]==2 && qiju[1][1]==2 && qiju[2][1]==2) {
+                            over = true;
+                            player = 2;
+                        }else if (qiju[0][2]==2 && qiju[1][2]==2 && qiju[2][2]==2) {
+                            over = true;
+                            player = 2;
+                        }
+                        //斜着两种赢法
+                        else if (qiju[0][0]==2 && qiju[1][1]==2 && qiju[2][2]==2) {
+                            over = true;
+                            player = 2;
+                        }else if (qiju[0][2]==2 && qiju[1][1]==2 && qiju[2][0]==2) {
+                            over = true;
+                            player = 2;
+                        }
+                        //
+                        else {
+                        }
+                    }
+
+                    z
+                </script>
+
+
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="daohang">
+    <div class="menuDiv">
+        <ul>
+            <li>
+                <a href="首页.html">首页</a>
+            </li>
+            <li>
+                <a href="人机五子棋.html">五子棋传奇</a>
+                <ul>
+                    <li><a href="人机五子棋.html">单人模式</a></li>
+                    <li><a href="人人五子棋.html">双人模式</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="人机象棋.html">象棋传奇</a>
+                <ul>
+
+                    <li><a href="人机象棋.html">单人模式</a></li>
+                    <li><a href="人人象棋.html">双人模式</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="人机井字棋.html">井字棋传奇</a>
+                <ul>
+                    <li><a href="人机井字棋.html">单人模式</a></li>
+                    <li><a href="人人井字棋.html">双人模式</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+<p class="dibu">
+    copyright  by  小迪棋牌室  ©Designed  by  xx&cc / More  Templates
+</p>
+<div class="div1">
+    <img src="logo1.png" class="img1">
+    <p class="p1">欢迎来到小迪棋牌室</p>
+</div>
+</body>
+</html>
