@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>双人象棋</title>
+    <title>单人象棋</title>
     <link rel="icon" href="4.jpg" sizes="32x32">
     <link rel="stylesheet" href="css/style.css">
     <link type="text/css" href="转圈圈特效.css" rel="stylesheet" >
@@ -156,6 +156,7 @@
                     var movetoj = 0;
                     var tostate = false;
                     var selecttip = false;
+                    var aii,aij;
 
                     var sum = 0;
                     var over = false;
@@ -228,6 +229,80 @@
                     }
 
 
+                    //1号智能算法
+                    var computerAI1 = function (){
+
+                        while (selecttip==false)
+                        {
+                            console.log("ai1");
+                            movefromi = Math.floor(Math.random()*10);//0-9随机数
+                            movefromj = Math.floor(Math.random()*9);//0-8随机数
+                            if(qiju[movefromi][movefromj]>10){
+                                selecttip = true;
+                            }
+                        }
+                        while (selecttip==true) {
+                            console.log("ai2");
+                            var r1i = Math.floor(Math.random()*10);
+                            var r1j = Math.floor(Math.random()*9);
+                            //确保不会吃自己的子
+                            if(qiju[r1i][r1j]<10) {
+                                moveTo(r1i, r1j);
+                            }
+                        }
+                    }
+
+                    //2号智能算法
+                    var computerAI2 = function (){
+
+                        var eat = false;
+                        goto:
+                            for(var r = 17; r >= 11 ;r--)
+                            {
+                                // console.log("ai");
+                                for(movefromi=0;movefromi<10;movefromi++){
+                                    for (movefromj=0;movefromj<9;movefromj++) {
+                                        if (qiju[movefromi][movefromj] == r) {
+                                            console.log("AI 2" + " r==" + r);
+                                            selecttip = true;
+
+                                            for(var eati=0;eati<10;eati++) {
+                                                for (var eatj = 0; eatj < 9; eatj++) {
+                                                    if (qiju[eati][eatj] > 0 && qiju[eati][eatj] < 10) {
+
+                                                        moveTo(eati, eatj);
+                                                        // eat = true;
+                                                        if(selecttip == false) {
+                                                            eat = true;
+                                                            console.log("goto");
+                                                            break goto;
+                                                        }
+
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        console.log("eat=="+eat);
+
+                        if(eat == false){
+                            selecttip = false;
+                            console.log("AI1");
+                            computerAI1();
+                        }
+
+                    }
+
+                    //3号智能算法
+                    var computerAI3 = function (){
+
+                    }
+
+
+
                     chess.onclick = function(e)
                     {
                         if(over){
@@ -239,36 +314,28 @@
                         var xx = Math.floor(x / 50);//保留不大于该数的整数
                         var yy = Math.floor(y / 50);
 
-                        if(sum%2==0){
-                            //红方先走11-17
-                            if(qiju[yy][xx]>0 && qiju[yy][xx]<=7){
-                                select(yy,xx);
-                                movefromi = yy;
-                                movefromj = xx;
-                                selecttip = true;
-                            }else{
-                                if(selecttip){
-                                    // select(yy,xx);
-                                    // if(qiju[yy][xx]<10) {
-                                    moveTo(yy, xx);
-
-                                }
-                            }
+                        //红方先走11-17
+                        if(qiju[yy][xx]>0 && qiju[yy][xx]<=7){
+                            select(yy,xx);
+                            movefromi = yy;
+                            movefromj = xx;
+                            selecttip = true;
                         }else{
-                            //黑方后走1-7
-                            if(qiju[yy][xx]>10 && qiju[yy][xx]<=17){
-                                select(yy,xx);
-                                movefromi = yy;
-                                movefromj = xx;
-                                selecttip = true;
-                            }else{
-                                if(selecttip){
-                                    // if(qiju[yy][xx]==0 || qiju[yy][xx]>10) {
+                            if(selecttip){
+                                // select(yy,xx);
+                                if(qiju[yy][xx]>10 || qiju[yy][xx]==0) {
                                     moveTo(yy, xx);
-                                    // }
+                                    if(sum%2==1) {
+                                        if(over){
+                                            return;
+                                        }
+                                        computerAI2();
+                                    }
                                 }
                             }
                         }
+                        //黑方后走1-7
+
 
                         // if(selecttip){
                         //
@@ -503,11 +570,11 @@
 
                     var moveTo = function (i,j) {
                         // select(i,j);
-                        console.log("moveTo");
+                        // console.log("moveTo");
                         if (selecttip){
                             switch (qiju[movefromi][movefromj]) {
                                 case 1:// str = "兵";
-                                    console.log("switch");
+                                    console.log("switch1");
                                     if (movefromi>4){
                                         //还未过河
                                         console.log("if1");
@@ -564,6 +631,7 @@
                                     }
                                     break;
                                 case 2:// str = "炮";
+                                    console.log("switch2");
                                     if(movefromi==i && movefromj!=j){
                                         var inspace = 0;
                                         var min = 0;
@@ -654,6 +722,7 @@
                                     }
                                     break;
                                 case 3:// str = "车";
+                                    console.log("switch3");
                                     console.log("车");
                                     console.log("movefromi=="+movefromi+" "+"movefromj=="+movefromj);
                                     console.log("i==" + i + " "+"j=="+j);
@@ -995,7 +1064,8 @@
                                     }
                                     break;
                                 case 11:// str = "卒";
-                                    console.log("switch");
+                                    console.log("switch11");
+                                    // console.log("switch");
                                     if (movefromi<=4){
                                         //还未过河
                                         console.log("if1");
@@ -1052,6 +1122,7 @@
                                     }
                                     break;
                                 case 12:// str = "炮";
+                                    console.log("switch12");
                                     if(movefromi==i && movefromj!=j){
                                         var inspace = 0;
                                         var min = 0;
@@ -1142,6 +1213,7 @@
                                     }
                                     break;
                                 case 13:// str = "車";
+                                    console.log("switch13");
                                     if(movefromi==i && movefromj!=j){
                                         var inspace = 0;
                                         var min = 0;
@@ -1175,7 +1247,6 @@
                                         }
                                     }
                                     else if(movefromj==j && movefromi!=i){
-                                        console.log("1111111");
                                         var inspace = 0;
                                         var min = 0;
                                         var max = 0;
@@ -1209,6 +1280,7 @@
                                     }
                                     break;
                                 case 14:// str = "馬";
+                                    console.log("switch14");
                                     if((movefromi-i)==1 && (movefromj-j)==2){
 
                                         if(qiju[movefromi][movefromj-1]==0) {
@@ -1318,6 +1390,7 @@
                                     }
                                     break;
                                 case 15:// str = "象";
+                                    console.log("switch15");
                                     if(i<=4){
                                         if((movefromi-i)==2 && (movefromj-j)==2){
 
@@ -1375,6 +1448,7 @@
                                     }
                                     break;
                                 case 16:// str = "士";
+                                    console.log("switch16");
                                     if(i<=2 && j>=3 && j<=5){
                                         if((movefromi-i)==1 && (movefromj-j)==1){
                                             if(qiju[i][j]==7){
@@ -1423,6 +1497,7 @@
                                     }
                                     break;
                                 case 17:// str = "帅";
+                                    console.log("switch17");
                                     if(qiju[i][j]==7){
                                         if(movefromj==j){
                                             var inspace = 0;
@@ -1490,7 +1565,7 @@
     <div class="menuDiv">
         <ul>
             <li>
-                <a href="首页.html">首页</a>
+                <a href="index.html">首页</a>
             </li>
             <li>
                 <a href="人机五子棋.html">五子棋传奇</a>
